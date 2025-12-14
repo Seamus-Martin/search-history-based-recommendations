@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Visited Pages Dashboard</title>
+  <style>
+    body { font-family: Arial; max-width: 900px; margin: 2rem auto; }
+    h1 { text-align: center; }
+    .page-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.05);
+    }
+    .page-card a { color: #1a0dab; text-decoration: none; }
+    .page-card a:hover { text-decoration: underline; }
+    .ai-summary { margin-top: 0.5rem; font-style: italic; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Visited Pages Dashboard</h1>
+    <div style="margin-bottom:2rem;">
+    <h2>Shopping Assistant</h2>
+    <input
+      id="chat-input"
+      type="text"
+      placeholder="Ask about your shopping habits or get recommendations..."
+      style="width:80%; padding:0.5rem;"
+    />
+    <button onclick="askChat()" style="padding:0.5rem;">Ask</button>
+    <div id="chat-response" style="margin-top:1rem;"></div>
+  </div>
+      <h2>Shopping History</h2>
+
+  <div id="pages"><p>Loading...</p></div>
+
+  <script>
+    // DELETE function
+    async function deletePage(id, cardElement) {
+      if (!confirm("Are you sure you want to delete this entry?")) return;
+
+      try {
+        const res = await fetch(`/api/pages/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete');
+        cardElement.remove();
+      } catch (err) {
+        alert("Error deleting page: " + err);
+        console.error(err);
+      }
+    }
+
+    // Render pages
+    function renderPages(pages) {
+      const container = document.getElementById('pages');
+      container.innerHTML = '';
+
+      if (!pages.length) {
+        container.innerHTML = '<p>No pages visited yet.</p>';
+        return;
+      }
+
+      pages.forEach(page => {
+        const card = document.createElement('div');
+        card.className = 'page-card';
+
+        card.innerHTML = `
+          <strong>Title:</strong> <a href="${page.url}" target="_blank">${page.title || page.url}</a><br>
+          <strong>URL:</strong> <a href="${page.url}" target="_blank">${page.url}</a><br>
+          <div class="ai-summary"><strong>AI Summary:</strong> ${page.ai_summary || 'Pending...'}</div>
+          <button style="margin-top:0.5rem;" class="delete-btn">Delete</button>
+        `;
+
+        card.querySelector('.delete-btn').addEventListener('click', () => deletePage(page.id, card));
+        container.appendChild(card);
+      });
+    }
+
+    // Fetch pages from backend
+    async function fetchPages() {
+      try {
+const response = await fetch('/api/pages');
+        if (!response.ok) throw new Error('Network response not ok');
+        const pages = await response.json();
+        renderPages(pages);
+      } catch (err) {
+        document.getElementById('pages').innerHTML = '<p style="color:red;">Error fetching pages: ' + err + '</p>';
+        console.error(err);
+      }
+    }
+
+    // Initial load
+    fetchPages();
+    async function askChat() {
+  const input = document.getElementById("chat-input");
+  const responseDiv = document.getElementById("chat-response");
+  const question = input.value.trim();
+
+  if (!question) return;
+
+  responseDiv.innerHTML = "Thinking...";
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question })
+    });
+
+    const data = await res.json();
+
+    let html = `<p><strong>Answer:</strong> ${data.answer}</p>`;
+
+    if (data.recommended_store) {
+      html += `
+        <p><strong>Recommended Store:</strong><br>
+        <a href="${data.recommended_store.url}" target="_blank">
+          ${data.recommended_store.title}
+        </a><br>
+        <em>${data.recommended_store.reason}</em>
+        </p>
+      `;
+    }
+
+    responseDiv.innerHTML = html;
+  } catch (err) {
+    responseDiv.innerHTML = "Error contacting assistant. Check console.";
+  console.error("Chat error:", err);
+  }
+}
+  </script>
+</body>
+</html>
