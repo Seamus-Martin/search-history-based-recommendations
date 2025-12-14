@@ -28,7 +28,9 @@ Note: to delete all existing searches: rm history.db
 
 
 **Design Decisions/Tradeoffs**
+
 1. 
+
 I decided to structure the user data storage as follows:
 
 for each site visited, the following information is stored:
@@ -43,4 +45,5 @@ What I would do in the future:
 I would have a user data structure that has elements that include things like price range, interests, etc. analysis_agent would update this structure, adding missing context. This will be more scalable when users have large numbers of stored searches.
 
 2. 
+
 As the problem suggested, I scraped a number of shopify stores and extracted a summary of their products, prices, etc. This works well for the demo but an improvement would be adding search capabilities so that the program can find relevant results from the internet, giving more relevant and up to date information. Will also improve the performance when more than the ~100 stores are being searched.
